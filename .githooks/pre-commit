@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Pre-commit guardrail: block scratch/diff dump files from ever reaching a commit.
+#
+# Ad-hoc artefacts (a diff written into the working tree during an interactive
+# agent session, a stray comparison dump) have reached `main` before undetected
+# (Bug #95668 — PR #258). Real comparison/scratch output belongs in a scratch
+# dir outside the working tree, never in the checkout.
+#
+# Enable once per clone: git config core.hooksPath .githooks
+#
+# Bypass only with explicit human confirmation (`git commit --no-verify`) —
+# never silently.
+set -euo pipefail
+
+patterns=(
+  '.tmp*'
+  '*.diff'
+  '*.patch'
+  '*.orig'
+  '*.rej'
+  '*_diff.txt'
+  '*_diff.md'
+  'diff.txt'
+  'diff_output.txt'
+  'scratch.txt'
+  'dump.txt'
+)
+
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$staged" ] && exit 0
+
+blocked=()
+while IFS= read -r file; do
+  base=$(basename -- "$file")
+  for pattern in "${patterns[@]}"; do
+    # shellcheck disable=SC2053
+    if [[ "$base" == $pattern ]]; then
+      blocked+=("$file")
+      break
+    fi
+  done
+done <<< "$staged"
+
+if [ "${#blocked[@]}" -gt 0 ]; then
+  echo "pre-commit: refusing to commit likely scratch/diff dump file(s):" >&2
+  printf '  %s\n' "${blocked[@]}" >&2
+  echo "" >&2
+  echo "Write scratch/diff comparison output to a scratch dir outside the" >&2
+  echo "working tree (never the checkout). If this file is genuinely intended," >&2
+  echo "rename it or commit with --no-verify (only with explicit human" >&2
+  echo "confirmation)." >&2
+  exit 1
+fi
+
+exit 0

@@ -1,0 +1,28 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Scratch / diff dumps — never commit these. Comparison/diff output from an
+# interactive agent session belongs in a scratch dir outside the working
+# tree, never in the checkout (Bug #95668 — cruft reached main via a normal
+# PR merge, undetected, because nothing stopped it at commit time).
+.tmp*
+*.diff
+*.patch
+*.orig
+*.rej
+*_diff.txt
+*_diff.md
+diff.txt
+diff_output.txt
+scratch.txt
+dump.txt
+
+# Stack-specific ignores (Python/.NET/Node/etc.) are added once the stack is
+# chosen -- see /factory-init-tech-context.
